@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QuizForge – NLP Quiz Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1b1f2b;
+    --border: #252a38;
+    --accent: #f0c040;
+    --accent2: #5b8fff;
+    --accent3: #ff6b6b;
+    --green: #4ade80;
+    --text: #e8eaf0;
+    --muted: #7a8099;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(91,143,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(91,143,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .header {
+    text-align: center;
+    padding: 48px 0 40px;
+    animation: fadeDown 0.6s ease both;
+  }
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(240,192,64,0.1);
+    border: 1px solid rgba(240,192,64,0.3);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #fff 40%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header p {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 1rem;
+    font-weight: 300;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 16px;
+    resize: vertical;
+    min-height: 180px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: var(--accent2); }
+  textarea::placeholder { color: var(--muted); }
+
+  .config-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .config-group {
+    flex: 1;
+    min-width: 160px;
+  }
+  .config-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237a8099' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    transition: border-color 0.2s;
+  }
+  select:focus { border-color: var(--accent2); }
+
+  .type-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .type-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .type-chip input { display: none; }
+  .type-chip.active-mcq { border-color: var(--accent2); color: var(--accent2); background: rgba(91,143,255,0.08); }
+  .type-chip.active-fill { border-color: var(--accent); color: var(--accent); background: rgba(240,192,64,0.08); }
+  .type-chip.active-short { border-color: var(--green); color: var(--green); background: rgba(74,222,128,0.08); }
+
+  .btn-generate {
+    width: 100%;
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--accent);
+    color: #0d0f14;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .btn-generate:hover:not(:disabled) {
+    background: #f5cc5c;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(240,192,64,0.25);
+  }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-top-color: #0d0f14;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  #results { animation: fadeUp 0.4s ease both; }
+
+  .results-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+  .stats-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .stat-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .pill-mcq { background: rgba(91,143,255,0.15); color: var(--accent2); border: 1px solid rgba(91,143,255,0.3); }
+  .pill-fill { background: rgba(240,192,64,0.12); color: var(--accent); border: 1px solid rgba(240,192,64,0.3); }
+  .pill-short { background: rgba(74,222,128,0.12); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .q-card:hover { border-color: #2d3347; }
+
+  .q-type-badge {
+    position: absolute;
+    top: 18px; right: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .badge-mcq { background: rgba(91,143,255,0.15); color: var(--accent2); }
+  .badge-fill { background: rgba(240,192,64,0.12); color: var(--accent); }
+  .badge-short { background: rgba(74,222,128,0.12); color: var(--green); }
+
+  .q-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .q-text {
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.6;
+    padding-right: 80px;
+    margin-bottom: 14px;
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .option {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .option:hover { border-color: var(--accent2); background: rgba(91,143,255,0.07); }
+  .option.correct { border-color: var(--green) !important; background: rgba(74,222,128,0.1) !important; }
+  .option.wrong { border-color: var(--accent3) !important; background: rgba(255,107,107,0.08) !important; }
+  .option-letter {
+    width: 22px; height: 22px;
+    background: var(--border);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+    color: var(--muted);
+  }
+
+  .answer-box {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: rgba(74,222,128,0.07);
+    border: 1px solid rgba(74,222,128,0.2);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    color: var(--green);
+    display: none;
+  }
+  .answer-box.visible { display: block; }
+  .answer-box strong { font-weight: 600; }
+
+  .reveal-btn {
+    margin-top: 10px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .reveal-btn:hover { border-color: var(--green); color: var(--green); }
+
+  .btn-export {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 0.88rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+  }
+  .btn-export:hover { border-color: var(--accent); color: var(--accent); }
+
+  .error-box {
+    background: rgba(255,107,107,0.08);
+    border: 1px solid rgba(255,107,107,0.3);
+    border-radius: 10px;
+    padding: 16px 20px;
+    color: var(--accent3);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 560px) {
+    .options-grid { grid-template-columns: 1fr; }
+    .config-group { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-badge"> </div>
+    <h1>QuizForge</h1>
+    <p>Paste textbook content. Get a full quiz in seconds.</p>
+  </div>
+
+  <div class="card" style="animation-delay:0.1s">
+    <div class="section-label">📄 Chapter / Textbook Content</div>
+    <textarea id="inputText" placeholder="Paste your chapter text here... (e.g., The water cycle is the process by which water circulates through the Earth's systems...)"></textarea>
+
+    <div class="config-row">
+      <div class="config-group">
+        <label>Number of Questions</label>
+        <select id="numQuestions">
+          <option value="5">5 Questions</option>
+          <option value="10" selected>10 Questions</option>
+          <option value="15">15 Questions</option>
+          <option value="20">20 Questions</option>
+        </select>
+      </div>
+      <div class="config-group">
+        <label>Difficulty Level</label>
+        <select id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+          <option value="mixed">Mixed</option>
+        </select>
+      </div>
+      <div class="config-group">
+        <label>Subject Domain</label>
+        <select id="subject">
+          <option value="general">General</option>
+          <option value="science">Science</option>
+          <option value="history">History</option>
+          <option value="literature">Literature</option>
+          <option value="mathematics">Mathematics</option>
+          <option value="computer science">Computer Science</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:20px;">🎯 Question Types</div>
+    <div class="type-row">
+      <label class="type-chip active-mcq" id="chip-mcq">
+        <input type="checkbox" id="type-mcq" checked> 🔵 Multiple Choice
+      </label>
+      <label class="type-chip active-fill" id="chip-fill">
+        <input type="checkbox" id="type-fill" checked> 🟡 Fill in the Blank
+      </label>
+      <label class="type-chip active-short" id="chip-short">
+        <input type="checkbox" id="type-short" checked> 🟢 Short Answer
+      </label>
+    </div>
+
+    <button class="btn-generate" id="generateBtn" onclick="generateQuiz()">
+      <span>⚡ Generate Quiz</span>
+    </button>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+const API_KEY = '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';
+
+['mcq','fill','short'].forEach(type => {
+  const chip = document.getElementById('chip-' + type);
+  const cb = document.getElementById('type-' + type);
+  chip.addEventListener('click', () => {
+    cb.checked = !cb.checked;
+    chip.classList.toggle('active-' + type, cb.checked);
+  });
+});
+
+async function generateQuiz() {
+  const text = document.getElementById('inputText').value.trim();
+  const numQ = document.getElementById('numQuestions').value;
+  const diff = document.getElementById('difficulty').value;
+  const subj = document.getElementById('subject').value;
+  const useMCQ = document.getElementById('type-mcq').checked;
+  const useFill = document.getElementById('type-fill').checked;
+  const useShort = document.getElementById('type-short').checked;
+
+  if (!text) { showError('Please paste some textbook content first!'); return; }
+  if (!useMCQ && !useFill && !useShort) { showError('Please select at least one question type!'); return; }
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div><span>Generating quiz...</span>';
+  document.getElementById('results').innerHTML = '';
+
+  const types = [];
+  if (useMCQ) types.push('MCQ (multiple_choice): 4 options A B C D, mark correct answer');
+  if (useFill) types.push('FILL (fill_blank): sentence with _____ for missing word, provide answer');
+  if (useShort) types.push('SHORT (short_answer): open-ended question with a concise answer');
+
+  const prompt = `You are an expert quiz generator for ${subj} education. Generate exactly ${numQ} questions at ${diff} difficulty from the following text.
+
+Question types to include: ${types.join('; ')}.
+
+Distribute questions as evenly as possible among the selected types.
+
+Return ONLY valid JSON (no markdown, no explanation) in this exact format:
+{
+  "questions": [
+    {
+      "type": "multiple_choice",
+      "question": "What is ...?",
+      "options": {"A": "...", "B": "...", "C": "...", "D": "..."},
+      "answer": "A",
+      "explanation": "Brief reason why this is correct."
+    },
+    {
+      "type": "fill_blank",
+      "question": "The _____ is responsible for ...",
+      "answer": "word or phrase",
+      "explanation": "Brief explanation."
+    },
+    {
+      "type": "short_answer",
+      "question": "Explain why ...?",
+      "answer": "Concise model answer.",
+      "explanation": "Key points."
+    }
+  ]
+}
+
+SOURCE TEXT:
+${text.slice(0, 4000)}`;
+
+  try {
+    const res = await fetch(
+      `https://api.groq.com/openai/v1/chat/completions`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 4096
+        })
+      }
+    );
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'API error');
+
+    const raw = data.choices?.[0]?.message?.content || '';
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Could not parse response. Try again.');
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    renderResults(parsed.questions, numQ, diff);
+
+  } catch (err) {
+    showError('Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>⚡ Generate Quiz</span>';
+  }
+}
+
+function renderResults(questions, numQ, diff) {
+  if (!questions || questions.length === 0) {
+    showError('No questions were generated. Try with more detailed text.');
+    return;
+  }
+
+  const mcqCount = questions.filter(q => q.type === 'multiple_choice').length;
+  const fillCount = questions.filter(q => q.type === 'fill_blank').length;
+  const shortCount = questions.filter(q => q.type === 'short_answer').length;
+
+  let html = `
+    <div style="margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <div class="results-title">Generated Quiz</div>
+      <button class="btn-export" onclick="exportQuiz()">📋 Export as Text</button>
+    </div>
+    <div class="stats-row">
+      <span class="stat-pill pill-mcq">MCQ × ${mcqCount}</span>
+      <span class="stat-pill pill-fill">Fill × ${fillCount}</span>
+      <span class="stat-pill pill-short">Short × ${shortCount}</span>
+      <span class="stat-pill" style="background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--border);">${diff.toUpperCase()}</span>
+    </div>
+  `;
+
+  questions.forEach((q, i) => {
+    const typeLabel = q.type === 'multiple_choice' ? 'MCQ' : q.type === 'fill_blank' ? 'FILL' : 'SHORT';
+    const badgeClass = q.type === 'multiple_choice' ? 'badge-mcq' : q.type === 'fill_blank' ? 'badge-fill' : 'badge-short';
+
+    html += `<div class="q-card" id="qcard-${i}">
+      <span class="q-type-badge ${badgeClass}">${typeLabel}</span>
+      <div class="q-number">Q${i + 1}</div>
+      <div class="q-text">${q.question}</div>`;
+
+    if (q.type === 'multiple_choice' && q.options) {
+      html += `<div class="options-grid">`;
+      ['A','B','C','D'].forEach(letter => {
+        if (q.options[letter]) {
+          html += `<div class="option" id="opt-${i}-${letter}" onclick="checkAnswer(${i},'${letter}','${q.answer}')">
+            <span class="option-letter">${letter}</span>
+            <span>${q.options[letter]}</span>
+          </div>`;
+        }
+      });
+      html += `</div>`;
+    }
+
+    html += `
+      <div class="answer-box" id="ans-${i}">
+        <strong>✅ Answer:</strong> ${q.answer}
+        ${q.explanation ? `<br><span style="color:var(--muted);margin-top:4px;display:block;">${q.explanation}</span>` : ''}
+      </div>`;
+
+    if (q.type !== 'multiple_choice') {
+      html += `<button class="reveal-btn" onclick="toggleAnswer(${i})">Show Answer</button>`;
+    }
+
+    html += `</div>`;
+  });
+
+  document.getElementById('results').innerHTML = html;
+  window._quizQuestions = questions;
+}
+
+function checkAnswer(qIndex, selected, correct) {
+  ['A','B','C','D'].forEach(letter => {
+    const el = document.getElementById(`opt-${qIndex}-${letter}`);
+    if (el) { el.classList.remove('correct','wrong'); el.style.pointerEvents = 'none'; }
+  });
+  const selectedEl = document.getElementById(`opt-${qIndex}-${selected}`);
+  const correctEl = document.getElementById(`opt-${qIndex}-${correct}`);
+  if (selected === correct) {
+    selectedEl?.classList.add('correct');
+  } else {
+    selectedEl?.classList.add('wrong');
+    correctEl?.classList.add('correct');
+  }
+  const ansBox = document.getElementById(`ans-${qIndex}`);
+  if (ansBox) ansBox.classList.add('visible');
+}
+
+function toggleAnswer(qIndex) {
+  const box = document.getElementById(`ans-${qIndex}`);
+  box?.classList.toggle('visible');
+}
+
+function exportQuiz() {
+  const questions = window._quizQuestions;
+  if (!questions) return;
+  let out = 'QUIZ EXPORT\n' + '='.repeat(50) + '\n\n';
+  questions.forEach((q, i) => {
+    const typeLabel = q.type === 'multiple_choice' ? '[MCQ]' : q.type === 'fill_blank' ? '[Fill in the Blank]' : '[Short Answer]';
+    out += `${typeLabel} Q${i+1}: ${q.question}\n`;
+    if (q.type === 'multiple_choice' && q.options) {
+      ['A','B','C','D'].forEach(l => q.options[l] && (out += `  ${l}) ${q.options[l]}\n`));
+    }
+    out += `Answer: ${q.answer}\n\n`;
+  });
+  const blob = new Blob([out], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'quiz_export.txt';
+  a.click();
+}
+
+function showError(msg) {
+  document.getElementById('results').innerHTML = `<div class="error-box">⚠️ ${msg}</div>`;
+}
+</script>
+</body>
+</html>
