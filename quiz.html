@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QuizForge – NLP Quiz Generator</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-badge"> </div>
+    <h1>QuizForge</h1>
+    <p>Paste textbook content. Get a full quiz in seconds.</p>
+  </div>
+
+  <div class="card" style="animation-delay:0.1s">
+    <div class="section-label">📄 Chapter / Textbook Content</div>
+    <textarea id="inputText" placeholder="Paste your chapter text here... (e.g., The water cycle is the process by which water circulates through the Earth's systems...)"></textarea>
+
+    <div class="config-row">
+      <div class="config-group">
+        <label>Number of Questions</label>
+        <select id="numQuestions">
+          <option value="5">5 Questions</option>
+          <option value="10" selected>10 Questions</option>
+          <option value="15">15 Questions</option>
+          <option value="20">20 Questions</option>
+        </select>
+      </div>
+      <div class="config-group">
+        <label>Difficulty Level</label>
+        <select id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+          <option value="mixed">Mixed</option>
+        </select>
+      </div>
+      <div class="config-group">
+        <label>Subject Domain</label>
+        <select id="subject">
+          <option value="general">General</option>
+          <option value="science">Science</option>
+          <option value="history">History</option>
+          <option value="literature">Literature</option>
+          <option value="mathematics">Mathematics</option>
+          <option value="computer science">Computer Science</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:20px;">🎯 Question Types</div>
+    <div class="type-row">
+      <label class="type-chip active-mcq" id="chip-mcq">
+        <input type="checkbox" id="type-mcq" checked> 🔵 Multiple Choice
+      </label>
+      <label class="type-chip active-fill" id="chip-fill">
+        <input type="checkbox" id="type-fill" checked> 🟡 Fill in the Blank
+      </label>
+      <label class="type-chip active-short" id="chip-short">
+        <input type="checkbox" id="type-short" checked> 🟢 Short Answer
+      </label>
+    </div>
+
+    <button class="btn-generate" id="generateBtn" onclick="generateQuiz()">
+      <span>⚡ Generate Quiz</span>
+    </button>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
